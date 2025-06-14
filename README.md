@@ -1,4 +1,17 @@
 
+# What the fork?
+
+This is a fork of y-websocket-server (README below), with
+
+- a configuration file `tokens.yaml`, to define authentication tokens
+- the token can be passed by the client as a suffix in the room name (`roomname?t=....`)
+
+---
+
+(original README)
+
+---
+
 # y-websocket-server :tophat:
 > Simple backend for [y-websocket](https://github.com/yjs/y-websocket)
 

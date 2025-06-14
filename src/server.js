@@ -8,6 +8,10 @@ import { setupWSConnection } from './utils.js'
 import YAML from 'yaml'
 import { z } from 'zod'
 
+function log(type, ...m) {
+  console.log(`[${type}]`, ...m)
+}
+
 const wss = new WebSocket.Server({ noServer: true })
 const host = process.env.HOST || 'localhost'
 const port = number.parseInt(process.env.PORT || '1234')
@@ -30,7 +34,9 @@ function loadTokens(path='tokens.yaml') {
   return zTokenMap.parse(YAML.parse(file))
 }
 
+log('sv', 'Loading tokens...')
 let tokens = loadTokens() // token -> regexp(ordered) -> mode
+log('sv', 'Loaded', Object.values(tokens).length, 'tokens with', Object.values(tokens).map(o => Object.values(o).length).reduce((a,b)=>a+b, 0), 'rules')
 
 
 server.on('upgrade', (request, socket, head) => {
@@ -42,10 +48,12 @@ server.on('upgrade', (request, socket, head) => {
 
   // See https://github.com/websockets/ws#client-authentication
 
+  log('cl', 'Receiving connection…')
   const { url } = request
   if (url === undefined) return error()
   const urlObject = new URL('https://example.com'+url)
   const t = urlObject.searchParams.get('t') ?? ''
+  log('cl', '| path:', urlObject.pathname, '; token length:', t.length)
   if (!(t in tokens)) return error()
   let access = undefined
   for (const [regex, mode] of Object.entries(tokens[t])) {
@@ -56,6 +64,7 @@ server.on('upgrade', (request, socket, head) => {
       break
     }
   }
+  log('cl', '⇒ access:', access)
   if (!access || access === 'denied') return error()
 
   wss.handleUpgrade(request, socket, head, /** @param {any} ws */ ws => {
