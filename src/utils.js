@@ -166,12 +166,33 @@ export const getYDoc = (docname, gc = true) => map.setIfUndefined(docs, docname,
   return doc
 })
 
+const readSyncMessageWithReadOnly = (syncProtocol, decoder, encoder, doc, transactionOrigin, readOnly) => {
+  const messageType = decoding.readVarUint(decoder)
+  switch (messageType) {
+    case syncProtocol.messageYjsSyncStep1:
+      syncProtocol.readSyncStep1(decoder, encoder, doc)
+      break
+    case syncProtocol.messageYjsSyncStep2:
+      if (readOnly) break
+      syncProtocol.readSyncStep2(decoder, doc, transactionOrigin)
+      break
+    case syncProtocol.messageYjsUpdate:
+      if (readOnly) break
+      syncProtocol.readUpdate(decoder, doc, transactionOrigin)
+      break
+    default:
+      throw new Error('Unknown message type')
+  }
+  return messageType
+}
+
 /**
+ * @param {boolean} readOnly
  * @param {any} conn
  * @param {WSSharedDoc} doc
  * @param {Uint8Array} message
  */
-const messageListener = (conn, doc, message) => {
+const messageListener = (readOnly) => (conn, doc, message) => {
   try {
     const encoder = encoding.createEncoder()
     const decoder = decoding.createDecoder(message)
@@ -179,7 +200,7 @@ const messageListener = (conn, doc, message) => {
     switch (messageType) {
       case messageSync:
         encoding.writeVarUint(encoder, messageSync)
-        syncProtocol.readSyncMessage(decoder, encoder, doc, conn)
+        readSyncMessageWithReadOnly(syncProtocol, decoder, encoder, doc, conn, readOnly)
 
         // If the `encoder` only contains the type of reply message and no
         // message, there is no need to send the message. When `encoder` only
@@ -247,13 +268,13 @@ const pingTimeout = 30000
  * @param {import('http').IncomingMessage} req
  * @param {any} opts
  */
-export const setupWSConnection = (conn, req, { docName = (req.url || '').slice(1).split('?')[0], gc = true } = {}) => {
+export const setupWSConnection = (conn, req, { docName = (req.url || '').slice(1).split('?')[0], gc = true, readOnly = false } = {}) => {
   conn.binaryType = 'arraybuffer'
   // get doc, initialize if it does not exist yet
   const doc = getYDoc(docName, gc)
   doc.conns.set(conn, new Set())
   // listen and reply to events
-  conn.on('message', /** @param {ArrayBuffer} message */ message => messageListener(conn, doc, new Uint8Array(message)))
+  conn.on('message', /** @param {ArrayBuffer} message */ message => messageListener(readOnly)(conn, doc, new Uint8Array(message)))
 
   // Check if connection is still alive
   let pongReceived = true
