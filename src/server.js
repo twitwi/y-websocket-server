@@ -27,7 +27,7 @@ wss.on('connection', (conn, req, readOnly) => {
 
 const zToken = z.string()
 const zAccessType = z.union([z.literal('read'), z.literal('write'), z.literal('denied')])
-const zTokenMap = z.record(z.string(), z.record(zAccessType)) // token -> regexp -> mode
+const zTokenMap = z.record(zToken, z.record(zAccessType)) // token -> regexp -> mode
 
 function loadTokens(path='tokens.yaml') {
   const file = fs.readFileSync(path, 'utf8')

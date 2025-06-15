@@ -17,6 +17,7 @@
   },
   "bin": {
     "y-websocket-server": "src/server.js",
+    "y-ldb-dump": "src/ldb-dump.js",
     "y-websocket": "src/server.js"
   },
   "files": [
