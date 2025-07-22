@@ -1,5 +1,6 @@
 # three-words: text token
 - write Ttest ^/TEST/
+- read  Ttest ^/RO/
 # array: regexp token (here for the empty token)
 - ['read', '^$', '^/PUBLIC/.*$']
 # e.g.: trivial, un-hashed token factory

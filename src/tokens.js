@@ -76,7 +76,7 @@ export function getAccessMode(config, token, path) {
             const hashCheck = biReplace(rule.hashCheck, T, P)
             const preHash = biReplace(rule.preHash, T, P)
             const hash = createHash('sha256').update(preHash).digest('hex').substring(0, rule.l)
-            console.log("!!!!", preHash, hash, hashCheck === hash)
+            //console.log("!!!!", preHash, hash, hashCheck === hash)
             if (hashCheck !== hash) {
                 continue
             }
@@ -101,6 +101,9 @@ export function testAccess() {
     _('denied', 'blaTtestbla', '/TEST/ok')
     _('denied', 'Ttest', '/ko/TEST/ko')
     _('denied', '', '/TEST')
+    _('denied', 'Ttest', '/RO')
+    _('read', 'Ttest', '/RO/ok') // even if two spaces after "read" in the yaml
+    // # array: regexp token (here for the empty token)
     _('denied', '', '/PUBLIC')
     _('read', '', '/PUBLIC/')
     _('read', '', '/PUBLIC/yes')
