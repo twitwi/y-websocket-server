@@ -1,12 +1,10 @@
 #!/usr/bin/env node
 
 import WebSocket from 'ws'
-import fs from 'fs'
 import http from 'http'
 import * as number from 'lib0/number'
 import { setupWSConnection } from './utils.js'
-import YAML from 'yaml'
-import { z } from 'zod'
+import { getAccessMode, loadYaml } from './tokens.js'
 
 function log(type, ...m) {
   console.log(`[${type}]`, ...m)
@@ -15,6 +13,7 @@ function log(type, ...m) {
 const wss = new WebSocket.Server({ noServer: true })
 const host = process.env.HOST || 'localhost'
 const port = number.parseInt(process.env.PORT || '1234')
+const tokensFile = process.env.TOKENS || './tokens.yaml'
 
 const server = http.createServer((_request, response) => {
   response.writeHead(200, { 'Content-Type': 'text/plain' })
@@ -25,18 +24,11 @@ wss.on('connection', (conn, req, readOnly) => {
   return setupWSConnection(conn, req, { readOnly })
 })
 
-const zToken = z.string()
-const zAccessType = z.union([z.literal('read'), z.literal('write'), z.literal('denied')])
-const zTokenMap = z.record(zToken, z.record(zAccessType)) // token -> regexp -> mode
-
-function loadTokens(path='tokens.yaml') {
-  const file = fs.readFileSync(path, 'utf8')
-  return zTokenMap.parse(YAML.parse(file))
-}
 
 log('sv', 'Loading tokens...')
-let tokens = loadTokens() // token -> regexp(ordered) -> mode
-log('sv', 'Loaded', Object.values(tokens).length, 'tokens with', Object.values(tokens).map(o => Object.values(o).length).reduce((a,b)=>a+b, 0), 'rules')
+// TODO: consider reload if file changed
+let tokens = loadYaml(tokensFile)
+log('sv', 'Loaded', Object.values(tokens).length, 'rules')
 
 
 server.on('upgrade', (request, socket, head) => {
@@ -54,16 +46,7 @@ server.on('upgrade', (request, socket, head) => {
   const urlObject = new URL('https://example.com'+url)
   const t = urlObject.searchParams.get('t') ?? ''
   log('cl', '| path:', urlObject.pathname, '; token length:', t.length)
-  if (!(t in tokens)) return error()
-  let access = undefined
-  for (const [regex, mode] of Object.entries(tokens[t])) {
-    const re = new RegExp(regex)
-    const match = re.test(urlObject.pathname)
-    if (match) {
-      access = mode
-      break
-    }
-  }
+  const access = getAccessMode(tokens, t, urlObject.pathname)
   log('cl', '⇒ access:', access)
   if (!access || access === 'denied') return error()
 

@@ -3,8 +3,12 @@
 
 This is a fork of y-websocket-server (README below), with
 
-- a configuration file `tokens.yaml`, to define authentication tokens
+- a configuration file `tokens.yaml` (`TOKENS=tokens.yaml`), to define authentication tokens
 - the token can be passed by the client as a suffix in the room name (`roomname?t=....`)
+
+Dev notes
+
+- `TEST=1 node src/tokens.js` to run token.js tests
 
 ---
 
