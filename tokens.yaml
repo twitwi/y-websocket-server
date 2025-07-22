@@ -1,4 +1,9 @@
-'':
-  '^/public/': read
-'publicwriter':
-  '^/public/': write
+# See also tokens_test.yaml for typical examples.
+- ['read', '^$', '^/public/']
+- write thisisnotthedroidyouarelookingfor ^/public/
+- mode: write
+  token: ^TEST_(.*)$
+  path: ^/TEST/(.*)$
+  checks:
+  - ['$T1$', '$P1$']
+

@@ -59,10 +59,11 @@
     ]
   },
   "dependencies": {
+    "assert": "^2.1.0",
     "lib0": "^0.2.102",
     "y-protocols": "^1.0.5",
     "yaml": "^2.8.0",
-    "zod": "^3.25.64"
+    "zod": "^4.0.5"
   },
   "devDependencies": {
     "@types/node": "^18.15.0",

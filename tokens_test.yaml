@@ -1,0 +1,48 @@
+# three-words: text token
+- write Ttest ^/TEST/
+# array: regexp token (here for the empty token)
+- ['read', '^$', '^/PUBLIC/.*$']
+# e.g.: trivial, un-hashed token factory
+- mode: write
+  token: ^TEST_(.*)$
+  path: ^/TEST/(.*)$
+  checks:
+  - ['$T1$', '$P1$']
+# e.g.: per-doc token access
+- mode: read
+  token: ^Ttest_ro(.*)$
+  path: ^/DOCS/(.*)$
+  preHash: 'salt_2025-07-22T11:15:41_$P1$_read'
+  hashCheck: '$T1$'
+  l: 6
+- mode: write
+  token: ^Ttest_(.*)$
+  path: ^/DOCS/(.*)$
+  preHash: 'salt_2025-07-22T11:15:41_$P1$_write'
+  hashCheck: '$T1$'
+  l: 8
+# e.g.: per-user token access to a shared folder
+- mode: write
+  token: ^Tgroup-(.*)-(.*)$
+  path: ^/GROUP/.*$
+  preHash: 'salt_2025-07-22T11:15:41_$T1$'
+  hashCheck: $T2$
+  l: 16
+# e.g.: per-user token access to personal document
+- denied Tuser-beerbad-3555aa1b
+- mode: write
+  token: ^Tuser-(.*)-(.*)$
+  path: ^/PRIVATE/([^/]*)/.*$
+  checks:
+  - ['$T1$', '$P1$']
+  preHash: 'salt_2025-07-22T11:15:41_$T1$'
+  hashCheck: '$T2$'
+  l: 8
+# e.g.: per-user, per-doc access to shared documents
+- denied Tfine-bob-5405d10f17f3ca210c1e550ee7a44255
+- mode: write
+  token: ^Tfine-(.*)-(.*)$
+  path: ^/FINESHARE/(.*)$
+  preHash: 'salt_2025-07-22T11:15:41_$T1$_$P1$'
+  hashCheck: '$T2$'
+
