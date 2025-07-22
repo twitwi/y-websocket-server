@@ -46,4 +46,4 @@
   path: ^/FINESHARE/(.*)$
   preHash: 'salt_2025-07-22T11:15:41_$T1$_$P1$'
   hashCheck: '$T2$'
-
+# NB: impossible missing use case: hierarchy of folders with a single rule to give "nested" access using hierarchy of token

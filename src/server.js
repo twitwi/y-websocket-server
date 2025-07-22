@@ -27,8 +27,8 @@ wss.on('connection', (conn, req, readOnly) => {
 
 log('sv', 'Loading tokens...')
 // TODO: consider reload if file changed
-let tokens = loadYaml(tokensFile)
-log('sv', 'Loaded', Object.values(tokens).length, 'rules')
+const cfg = loadYaml(tokensFile)
+log('sv', 'Loaded', Object.values(cfg).length, 'rules')
 
 
 server.on('upgrade', (request, socket, head) => {
@@ -46,7 +46,7 @@ server.on('upgrade', (request, socket, head) => {
   const urlObject = new URL('https://example.com'+url)
   const t = urlObject.searchParams.get('t') ?? ''
   log('cl', '| path:', urlObject.pathname, '; token length:', t.length)
-  const access = getAccessMode(tokens, t, urlObject.pathname)
+  const access = getAccessMode(cfg, t, urlObject.pathname)
   log('cl', '⇒ access:', access)
   if (!access || access === 'denied') return error()
 

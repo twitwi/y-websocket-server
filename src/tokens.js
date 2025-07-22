@@ -60,7 +60,7 @@ export function getRegexp(pattern) {
     return new RegExp(pattern)
 }
 
-export function getAccessMode(config, token, path) {
+export function getAccessMode(config, token, path, verbose='') {
     ruleLoop: for (const rule of config) {
         const reToken = getRegexp(rule.token)
         const rePath = getRegexp(rule.path)
@@ -76,7 +76,11 @@ export function getAccessMode(config, token, path) {
             const hashCheck = biReplace(rule.hashCheck, T, P)
             const preHash = biReplace(rule.preHash, T, P)
             const hash = createHash('sha256').update(preHash).digest('hex').substring(0, rule.l)
-            //console.log("!!!!", preHash, hash, hashCheck === hash)
+            if (verbose === 'debug') {
+                console.log("!!!!", preHash, hash, hashCheck === hash)
+            } else if (verbose == 'hash') {
+                console.log(hash)
+            }
             if (hashCheck !== hash) {
                 continue
             }
@@ -177,4 +181,15 @@ if (process.env.TEST) {
     testParsing()
     testAccess()
     console.log("... all done.")
+}
+
+if (process.env.FOR) {
+    const verbose = 'hash'
+    if (verbose !== 'hash') console.log("Running for specific token and path")
+    const cfgFile = process.env.TOKENS || './tokens.yaml'
+    const cfg = loadYaml(cfgFile)
+    const [token, path] = process.env.FOR.split(' ')
+    if (verbose !== 'hash') console.log(`Checking access for token «${token}» and path «${path}»`)
+    const access = getAccessMode(cfg, token, path, verbose)
+    if (verbose !== 'hash') console.log("Got:", access)
 }
