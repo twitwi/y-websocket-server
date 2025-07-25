@@ -8,11 +8,16 @@ This is a fork of y-websocket-server (README below), with
 
 Dev notes
 
-- to run token.js tests: `TEST=1 node src/tokens.js`
-- to query tokens: `TOKENS=./tokens_test.yaml FOR="Tfine-bob-BADHASH /FINESHARE/stuff" node src/tokens.js`
-- multiple ones is a possibility: `TOKENS=./tokens_test.yaml FOR="Ttest_roBADHASH /DOCS/gabu" node src/tokens.js`
-- reconstruct the token: `echo Ttest_$(TOKENS=./tokens_test.yaml FOR="Ttest_BADHASH /DOCS/gabuzomeu" node src/tokens.js )`
-- loop it: `for f in stuff other/stuff ; do for w in bob troy abed britta ; do echo example.com::/FINESHARE/$f::Tfine-$w-$(TOKENS=./tokens_test.yaml FOR="Tfine-$w-BADHASH /FINESHARE/$f" node src/tokens.js) ; done ; done`
+- to run token.js tests
+  - `TEST=1 node src/tokens.js`
+- to query tokens:
+  - `TOKENS=./tokens_test.yaml FOR="Tfine-bob-BADHASH /FINESHARE/stuff" node src/tokens.js`
+  - getting multiple ones is a possibility, e.g.: `TOKENS=./tokens_test.yaml FOR="Ttest_roBADHASH /DOCS/gabu" node src/tokens.js`
+- one-liner to reconstruct the token
+  - `echo Ttest_$(TOKENS=./tokens_test.yaml FOR="Ttest_BADHASH /DOCS/gabuzomeu" node src/tokens.js )`
+- loop it
+  - `for f in stuff other/stuff ; do for w in bob troy abed britta ; do echo example.com::/FINESHARE/$f::Tfine-$w-$(TOKENS=./tokens_test.yaml FOR="Tfine-$w-BADHASH /FINESHARE/$f" node src/tokens.js) ; done ; done`
+  
 ---
 
 (original README)
