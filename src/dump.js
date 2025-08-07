@@ -2,11 +2,15 @@ import { writeFileSync } from "fs"
 import { LeveldbPersistence } from "y-leveldb"
 import { getTypedYjsValue } from "./converttools.js"
 
-async function main(persistenceDir, outputFile) {
+async function main(persistenceDir, outputFile, docNamesOrEmpty) {
     const ldb = new LeveldbPersistence(persistenceDir)
-    const docNames = await ldb.getAllDocNames()
+    const allDocNames = await ldb.getAllDocNames()
+    const docNames = docNamesOrEmpty.length > 0 ? docNamesOrEmpty : allDocNames
     const res = {}
     for (const docName of docNames) {
+        if (!allDocNames.includes(docName)) {
+            throw `Document ${docName} does not exist`
+        }
         console.info("# Document", docName)
         const doc = await ldb.getYDoc(docName)
 
@@ -23,12 +27,14 @@ async function main(persistenceDir, outputFile) {
 
 const args = process.argv.slice(2)
 
-if (args.length == 2) {
-    const [persistenceDir, outputFile] = args
+if (args.length >= 2) {
+    const [persistenceDir, outputFile, ...docNames] = args
     console.info('# Loading documents from "' + persistenceDir + '"')
-    main(persistenceDir, outputFile).catch(console.error).then(() => console.info("# END"))
+    main(persistenceDir, outputFile, docNames)
+    .catch((...a) => { console.error("### EXCEPTION:", ...a) ; console.log("# Abort because of exception") })
+    .then(() => console.info("# END"))
 } else {
-    console.info(`Usage: y-ldb-dump <persistence-dir/> <output-file.json>`)
+    console.info(`Usage: y-ldb-dump <persistence-dir/> <output-file.json> [...<doc-names>]`)
     process.exit(1)
 }
 
