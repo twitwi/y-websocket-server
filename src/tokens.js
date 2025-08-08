@@ -1,7 +1,7 @@
 
 import fs from 'fs'
 import YAML from 'yaml'
-import { z } from 'zod'
+import { minLength, z } from 'zod'
 import assert from 'assert'
 import { createHash } from 'crypto'
 
@@ -10,6 +10,7 @@ export const zBiReplacement = z.string()
 //export const zAccessType = z.union([z.literal('read'), z.literal('write'), z.literal('denied')])
 export const zAccessType = z.literal(['read', 'write', 'denied'])
 //export const zTokenMap = z.record(zToken, z.record(zAccessType)) // token -> regexp -> mode
+export const zCheck = z.tuple([zBiReplacement, zBiReplacement]).or(z.string().array().min(3))
 export const zRule = z.object({
     mode: zAccessType,
     token: zRegexp,
@@ -17,7 +18,7 @@ export const zRule = z.object({
     preHash: zBiReplacement.optional(),
     l: z.number().default(32), // hash length for hash check
     hashCheck: zBiReplacement.optional(),
-    checks: z.array(z.tuple([zBiReplacement, zBiReplacement])).default([])
+    checks: z.array(zCheck).default([])
 }).strict()
 export const zRuleWithShortcuts = z.preprocess((input, ctx) => {
     if (typeof input === 'string') {
@@ -86,8 +87,16 @@ export function getAccessMode(config, token, path, verbose='') {
             }
         }
         for (const c of rule.checks) {
-            if (biReplace(c[0], T, P) !== biReplace(c[1], T, P)) {
-                continue ruleLoop
+            if (c.length == 2) {
+                if (biReplace(c[0], T, P) !== biReplace(c[1], T, P)) {
+                    continue ruleLoop
+                }
+            } else {
+                if (c[0] == 'in') {
+                    if (!biReplace(c[2], T, P).includes(biReplace(c[1], T, P))) {
+                        continue ruleLoop
+                    }
+                }
             }
         }
         return rule.mode
@@ -117,6 +126,7 @@ export function testAccess() {
     _('write', 'TEST_123', '/TEST/123')
     _('write', 'TEST_toto', '/TEST/toto')
     _('denied', 'TEST_123', '/TEST/toto')
+    _('denied', 'TEST_hackedtoken', '/TEST/hackedtoken')
     // # per-doc token access
     _('denied', '', '/DOCS/gabu')
     _('read', 'Ttest_rod781a4', '/DOCS/gabu')
@@ -146,6 +156,21 @@ export function testAccess() {
     _('write', 'Tfine-abed-be41604afcc669b2aa45197d99e3d980', '/FINESHARE/stuff')
     _('write', 'Tfine-abed-72f72c1270084c9fac438987ad2230c7', '/FINESHARE/other/stuff')
     _('denied', 'Tfine-abed-fcc31f37b09a77c53e7103c49cae16ec', '/FINESHARE/stuff')
+    // per-user token access to spontaneous-groups documents
+    _('write', 'Tshared-bob-secrettoken', '/SPONTANEOUS-GROUP/@bob/ok')
+    _('write', 'Tshared-bob-secrettoken', '/SPONTANEOUS-GROUP/@joe@abby@bob/ok')
+    _('write', 'Tshared-bob-secrettoken', '/SPONTANEOUS-GROUP/@joe@bob@abby/ok')
+    _('write', 'Tshared-bob-secrettoken', '/SPONTANEOUS-GROUP/@abby@joe@bob/ok')
+    _('write', 'Tshared-bob-secrettoken', '/SPONTANEOUS-GROUP/@a@b@c@bob@d@e@fff/more')
+    _('denied', 'Tshared-bob-secrettokenWRONG', '/SPONTANEOUS-GROUP/@a@b@c@bob@d@e@fff/more')
+    // generic version of per-user token access to spontaneous-groups documents
+    _('denied', 'Tshared-bob-badhash', '/SPONTANEOUS-GROUP/@joe@abby@bob/ok')
+    _('write', 'Tshared-bob-08b353cd5813edf92630937f2c891fc9', '/SPONTANEOUS-GROUP/@joe@abby@bob@zzz/ok')
+    _('denied', 'Tshared-bob-08b353cd5813edf92630937f2c891fc9', '/SPONTANEOUS-GROUP/@joe@abby@NOTbob@zzz/ok')
+    // same but unhashed
+    _('write', 'SHARED_bob', '/SHARED/@joe@abby@bob/ok')
+    _('write', 'SHARED_bob', '/SHARED/@joe@abby@bob@zzz/ok')
+    _('denied', 'SHARED_bob', '/SHARED/@joe@abby@NOTbob@zzz/ok')
 }
 export function testParsing() {
     const eq = assert.deepEqual

@@ -1,15 +1,21 @@
-# three-words: text token
+# rules made of three-words: token is text (not regexp)
 - write Ttest ^/TEST/
 - read  Ttest ^/RO/
-# array: regexp token (here for the empty token)
+
+# array: regexp token (here necessary for the empty token)
 - ['read', '^$', '^/PUBLIC/.*$']
-# e.g.: trivial, un-hashed token factory
+
+# revoke particular tokens (must occur before the corresponding rule)
+- denied TEST_hackedtoken
+
+# e.g.: trivial, un-hashed token linked to doc name (convenient for testing but not recommended)
 - mode: write
   token: ^TEST_(.*)$
   path: ^/TEST/(.*)$
   checks:
-  - ['$T1$', '$P1$']
-# e.g.: per-doc token access
+  - ['$T1$', '$P1$'] # i.e., they must be equal
+
+# e.g.: per-doc hashed token
 - mode: read
   token: ^Ttest_ro(.*)$
   path: ^/DOCS/(.*)$
@@ -22,15 +28,17 @@
   preHash: 'salt_2025-07-22T11:15:41_$P1$_write'
   hashCheck: '$T1$'
   l: 8
-# e.g.: per-user token access to a shared folder
+
+# e.g.: per-user token to a shared folder
 - mode: write
   token: ^Tgroup-(.*)-(.*)$
   path: ^/GROUP/.*$
   preHash: 'salt_2025-07-22T11:15:41_$T1$'
   hashCheck: $T2$
   l: 16
+
 # e.g.: per-user token access to personal document
-- denied Tuser-beerbad-3555aa1b
+- denied Tuser-beerbad-3555aa1b # to revoke a particular token
 - mode: write
   token: ^Tuser-(.*)-(.*)$
   path: ^/PRIVATE/([^/]*)/.*$
@@ -39,6 +47,7 @@
   preHash: 'salt_2025-07-22T11:15:41_$T1$'
   hashCheck: '$T2$'
   l: 8
+
 # e.g.: per-user, per-doc access to shared documents
 - denied Tfine-bob-5405d10f17f3ca210c1e550ee7a44255
 - mode: write
@@ -46,4 +55,25 @@
   path: ^/FINESHARE/(.*)$
   preHash: 'salt_2025-07-22T11:15:41_$T1$_$P1$'
   hashCheck: '$T2$'
+
+# e.g.: per-user token access to spontaneous-groups documents
+- write Tshared-bob-secrettoken ^/SPONTANEOUS-GROUP/[^/]*@bob[^/]*/
+
+# e.g.: generic version of per-user token access to spontaneous-groups documents
+- mode: write
+  token: ^Tshared-(.*)-(.*)$
+  path: ^/SPONTANEOUS-GROUP/([^/]*)/.*$
+  checks:
+  - ['in', '@$T1$', '$P1$']
+  preHash: 'salt_2025-07-22T11:15:41_$T1$_spontaneous'
+  hashCheck: '$T2$'
+
+# e.g.: same for testing purpose (no hashing)
+- mode: write
+  token: ^SHARED_(.*)$        # e.g. SHARED_bob
+  path: ^/SHARED/([^/]*)/.*$  # e.g. /SHARED/@abby@bob/todolist
+  checks:
+  - ['in', '@$T1$', '$P1$']
+
+
 # NB: impossible missing use case: hierarchy of folders with a single rule to give "nested" access using hierarchy of token

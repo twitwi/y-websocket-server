@@ -1,4 +1,4 @@
-# See also tokens_test.yaml for typical examples.
+# See also tokens_test.yaml for other typical advanced examples.
 - ['read', '^$', '^/public/']
 - write thisisnotthedroidyouarelookingfor ^/public/
 - mode: write
@@ -6,4 +6,8 @@
   path: ^/TEST/(.*)$
   checks:
   - ['$T1$', '$P1$']
-
+- mode: write
+  token: ^SHARED_(.*)$        # e.g. SHARED_bob
+  path: ^/SHARED/([^/*])/.*$  # e.g. /SHARED/@abby@bob/todolist
+  checks:
+  - ['in', '@$T1$', '$P1$']
