@@ -1,6 +1,8 @@
 
 # What the fork?
 
+(NB: TODO, consider porting these to https://github.com/closeally/yjs-server )
+
 This is a fork of y-websocket-server (README below), with
 
 - a configuration file `tokens.yaml` (`TOKENS=tokens.yaml`), to define authentication tokens
